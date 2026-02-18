@@ -264,18 +264,21 @@ void priority_np(vector<Process> base) {
 // -----------------------------
 // MAIN
 // -----------------------------
-int main(int argc, char* argv[]) {
-    if (argc < 3) {
-        cout << "Usage: ./a.out <algo|all> <num_processes>\n";
+int main() {
+    int n;
+    int choice;
+
+    cout << "Enter number of processes: ";
+    cin >> n;
+
+    if (n <= 0) {
+        cout << "Invalid number of processes.\n";
         return 0;
     }
 
-    string algo = argv[1];
-    int n = stoi(argv[2]);
-
     auto base = generate_processes(n);
 
-    cout << "Generated Processes:\n";
+    cout << "\nGenerated Processes:\n";
     for (auto& p : base) {
         cout << "P" << p.pid
              << " arrival=" << p.arrival
@@ -285,20 +288,54 @@ int main(int argc, char* argv[]) {
              << "\n";
     }
 
-    if (algo == "fcfs") fcfs(base);
-    else if (algo == "sjf") sjf(base);
-    else if (algo == "srtn") srtn(base);
-    else if (algo == "rr") {
-        for (int q : {2, 4, 6})
+    cout << "\nChoose Scheduling Algorithm:\n";
+    cout << "1. FCFS\n";
+    cout << "2. SJF (Non-preemptive)\n";
+    cout << "3. SRTN (Preemptive)\n";
+    cout << "4. Round Robin\n";
+    cout << "5. Priority (Non-preemptive)\n";
+    cout << "6. Run All\n";
+    cout << "Enter choice: ";
+    cin >> choice;
+
+    switch (choice) {
+        case 1:
+            fcfs(base);
+            break;
+
+        case 2:
+            sjf(base);
+            break;
+
+        case 3:
+            srtn(base);
+            break;
+
+        case 4: {
+            int q;
+            cout << "Enter time quantum: ";
+            cin >> q;
             round_robin(base, q);
+            break;
+        }
+
+        case 5:
+            priority_np(base);
+            break;
+
+        case 6:
+            fcfs(base);
+            sjf(base);
+            srtn(base);
+            round_robin(base, 2);
+            round_robin(base, 4);
+            round_robin(base, 6);
+            priority_np(base);
+            break;
+
+        default:
+            cout << "Invalid choice.\n";
     }
-    else if (algo == "priority") priority_np(base);
-    else if (algo == "all") {
-        fcfs(base);
-        sjf(base);
-        srtn(base);
-        for (int q : {2, 4, 6})
-            round_robin(base, q);
-        priority_np(base);
-    }
+
+    return 0;
 }

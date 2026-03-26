@@ -1,0 +1,7 @@
+A race condition occurs when multiple threads access and modify shared data at the same time,
+and the final result depends on the order of execution (which is unpredictable).
+
+Why does it happen?
+Threads run concurrently (at the same time)
+They share common variables or resources
+No proper synchronization (like mutex/locks)

@@ -1,188 +1,143 @@
 #include <stdio.h>
-#include <limits.h>
+#include <string.h>
 
-#define MAX 20
+#define MAX 10
 
 typedef struct {
-    int pid, at, bt, ct, tat, wt, rt;
-    int completed;
+    int pid, arrival, burst;
+    int remaining, finish, waiting, turnaround;
 } Process;
 
-/* -------- INPUT -------- */
 void input(Process p[], int n) {
-    for(int i = 0; i < n; i++) {
-        printf("\nProcess %d\n", i+1);
-        printf("Arrival Time: ");
-        scanf("%d", &p[i].at);
-        printf("Burst Time: ");
-        scanf("%d", &p[i].bt);
-
-        p[i].pid = i+1;
-        p[i].rt = p[i].bt;
-        p[i].completed = 0;
+    for (int i = 0; i < n; i++) {
+        p[i].pid = i + 1;
+        printf("Process %d - Arrival Time: ", i + 1);
+        scanf("%d", &p[i].arrival);
+        printf("Process %d - Burst Time: ", i + 1);
+        scanf("%d", &p[i].burst);
+        p[i].remaining = p[i].burst;
+        p[i].finish = p[i].waiting = p[i].turnaround = 0;
     }
 }
 
-/* -------- DISPLAY -------- */
-void display(Process p[], int n) {
-    float avg_tat = 0, avg_wt = 0;
-
-    printf("\nPID\tAT\tBT\tCT\tTAT\tWT\n");
-
-    for(int i = 0; i < n; i++) {
-        p[i].tat = p[i].ct - p[i].at;
-        p[i].wt = p[i].tat - p[i].bt;
-
-        avg_tat += p[i].tat;
-        avg_wt += p[i].wt;
-
-        printf("%d\t%d\t%d\t%d\t%d\t%d\n",
-               p[i].pid, p[i].at, p[i].bt,
-               p[i].ct, p[i].tat, p[i].wt);
+void printResults(Process p[], int n) {
+    printf("\n%-5s %-8s %-8s %-10s %-12s %-10s\n",
+           "PID", "Arrival", "Burst", "Finish", "Turnaround", "Waiting");
+    float avgTAT = 0, avgWT = 0;
+    for (int i = 0; i < n; i++) {
+        p[i].turnaround = p[i].finish - p[i].arrival;
+        p[i].waiting    = p[i].turnaround - p[i].burst;
+        printf("%-5d %-8d %-8d %-10d %-12d %-10d\n",
+               p[i].pid, p[i].arrival, p[i].burst,
+               p[i].finish, p[i].turnaround, p[i].waiting);
+        avgTAT += p[i].turnaround;
+        avgWT  += p[i].waiting;
     }
-
-    printf("\nAverage TAT = %.2f", avg_tat/n);
-    printf("\nAverage WT = %.2f\n", avg_wt/n);
+    printf("Average Turnaround Time: %.2f\n", avgTAT / n);
+    printf("Average Waiting Time   : %.2f\n", avgWT  / n);
 }
 
-/* -------- ROUND ROBIN -------- */
-void round_robin(Process p[], int n, int tq) {
-    int time = 0, completed = 0;
-    int queue[MAX], front = 0, rear = 0;
-    int visited[MAX] = {0};
+/* Round Robin */
+void roundRobin(Process p[], int n, int quantum) {
+    int time = 0, done = 0, completed[MAX] = {0};
+    for (int i = 0; i < n; i++) p[i].remaining = p[i].burst;
 
-    // Add first arriving process
-    for(int i = 0; i < n; i++) {
-        if(p[i].at == 0) {
-            queue[rear++] = i;
-            visited[i] = 1;
-        }
-    }
-
-    while(front < rear) {
-        int i = queue[front++];
-
-        if(p[i].rt > tq) {
-            time += tq;
-            p[i].rt -= tq;
-        } else {
-            time += p[i].rt;
-            p[i].rt = 0;
-            p[i].ct = time;
-            p[i].completed = 1;
-            completed++;
-        }
-
-        // Add newly arrived processes
-        for(int j = 0; j < n; j++) {
-            if(p[j].at <= time && !visited[j]) {
-                queue[rear++] = j;
-                visited[j] = 1;
+    while (done < n) {
+        int found = 0;
+        for (int i = 0; i < n; i++) {
+            if (!completed[i] && p[i].arrival <= time && p[i].remaining > 0) {
+                found = 1;
+                int exec = (p[i].remaining < quantum) ? p[i].remaining : quantum;
+                p[i].remaining -= exec;
+                time += exec;
+                if (p[i].remaining == 0) {
+                    p[i].finish = time;
+                    completed[i] = 1;
+                    done++;
+                }
             }
         }
-
-        // If process not finished, re-add to queue
-        if(p[i].rt > 0)
-            queue[rear++] = i;
+        if (!found) time++;
     }
-
-    display(p, n);
+    printf("\n=== Round Robin (Quantum = %d) ===", quantum);
+    printResults(p, n);
 }
 
-/* -------- LJF (Non-Preemptive) -------- */
+/* Longest Job First - Non-Preemptive */
 void ljf(Process p[], int n) {
-    int time = 0, completed = 0;
-
-    while(completed < n) {
-        int idx = -1, max_bt = -1;
-
-        for(int i = 0; i < n; i++) {
-            if(p[i].at <= time && !p[i].completed && p[i].bt > max_bt) {
-                max_bt = p[i].bt;
-                idx = i;
+    int done = 0, time = 0, completed[MAX] = {0};
+    while (done < n) {
+        int idx = -1, maxB = -1;
+        for (int i = 0; i < n; i++)
+            if (!completed[i] && p[i].arrival <= time && p[i].burst > maxB) {
+                maxB = p[i].burst; idx = i;
             }
-        }
-
-        if(idx != -1) {
-            time += p[idx].bt;
-            p[idx].ct = time;
-            p[idx].completed = 1;
-            completed++;
-        } else {
-            time++;
-        }
+        if (idx == -1) { time++; continue; }
+        time += p[idx].burst;
+        p[idx].finish = time;
+        completed[idx] = 1;
+        done++;
     }
-
-    display(p, n);
+    printf("\n=== Longest Job First (Non-Preemptive) ===");
+    printResults(p, n);
 }
 
-/* -------- LRTF (Preemptive) -------- */
+/* Longest Remaining Time First - Preemptive */
 void lrtf(Process p[], int n) {
-    int time = 0, completed = 0;
+    int done = 0, time = 0, completed[MAX] = {0};
+    for (int i = 0; i < n; i++) p[i].remaining = p[i].burst;
 
-    while(completed < n) {
-        int idx = -1, max_rt = -1;
-
-        for(int i = 0; i < n; i++) {
-            if(p[i].at <= time && !p[i].completed && p[i].rt > max_rt) {
-                max_rt = p[i].rt;
-                idx = i;
+    while (done < n) {
+        int idx = -1, maxR = -1;
+        for (int i = 0; i < n; i++)
+            if (!completed[i] && p[i].arrival <= time && p[i].remaining > maxR) {
+                maxR = p[i].remaining; idx = i;
             }
-        }
-
-        if(idx != -1) {
-            p[idx].rt--;
-            time++;
-
-            if(p[idx].rt == 0) {
-                p[idx].ct = time;
-                p[idx].completed = 1;
-                completed++;
-            }
-        } else {
-            time++;
+        if (idx == -1) { time++; continue; }
+        p[idx].remaining--;
+        time++;
+        if (p[idx].remaining == 0) {
+            p[idx].finish = time;
+            completed[idx] = 1;
+            done++;
         }
     }
-
-    display(p, n);
+    printf("\n=== Longest Remaining Time First (Preemptive) ===");
+    printResults(p, n);
 }
 
-/* -------- MAIN -------- */
 int main() {
-    Process p[MAX], temp[MAX];
-    int n, choice, tq;
+    int n, choice, quantum;
+    Process original[MAX], p[MAX];
 
-    printf("Enter number of processes: ");
+    printf("Enter number of processes (max %d): ", MAX);
     scanf("%d", &n);
 
-    input(p, n);
-
-    do {
-        for(int i = 0; i < n; i++)
-            temp[i] = p[i];
-
-        printf("\n\n--- Scheduling Algorithms ---\n");
-        printf("1. Round Robin\n2. Longest Job First\n3. Longest Remaining Time First\n0. Exit\n");
-        printf("Enter choice: ");
+    while (1) {
+        printf("\n====== Q2: CPU Scheduling Menu ======\n");
+        printf("1. Round Robin\n");
+        printf("2. Longest Job First (Non-Preemptive)\n");
+        printf("3. Longest Remaining Time First (Preemptive)\n");
+        printf("0. Exit\n");
+        printf("Choice: ");
         scanf("%d", &choice);
 
-        switch(choice) {
+        if (choice == 0) break;
+
+        printf("\nEnter process details:\n");
+        input(original, n);
+        memcpy(p, original, sizeof(Process) * n);
+
+        switch (choice) {
             case 1:
-                printf("Enter Time Quantum: ");
-                scanf("%d", &tq);
-                round_robin(temp, n, tq);
+                printf("Enter time quantum: ");
+                scanf("%d", &quantum);
+                roundRobin(p, n, quantum);
                 break;
-
-            case 2:
-                ljf(temp, n);
-                break;
-
-            case 3:
-                lrtf(temp, n);
-                break;
+            case 2: ljf(p, n); break;
+            case 3: lrtf(p, n); break;
+            default: printf("Invalid choice.\n");
         }
-
-    } while(choice != 0);
-
+    }
     return 0;
 }

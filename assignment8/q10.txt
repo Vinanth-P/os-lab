@@ -1,0 +1,17 @@
+Definition:
+
+Thread synchronization is the technique used to control the execution of multiple 
+threads so that they safely access shared resources without conflicts or errors.
+
+Why is it needed?
+
+When multiple threads:
+
+Access shared data
+Modify it at the same time
+
+* It can lead to:
+
+Race conditions
+Incorrect results
+Data inconsistency

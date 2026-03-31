@@ -1,0 +1,4 @@
+different methods in multi threading
+many to one
+one to one
+many to many 

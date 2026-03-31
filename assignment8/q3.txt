@@ -1,2 +1,3 @@
-pthread_create()	Create/start a new thread
-pthread_join()	Wait for thread to finish
+pthread_create()	Create/start a new thread (thread_id,attribute,function,argument)
+
+pthread_join() → main thread waits until the created thread finishes(sometime sif parent execution completes child may not execute fully)

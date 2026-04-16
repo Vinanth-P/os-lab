@@ -1,0 +1,48 @@
+dining philosopher
+case study
+deadlock detection methods
+understansing of multicore and multi threading
+-----------
+There are N philosophers sitting around a circular table
+Between each pair of philosophers, there is one fork
+Each philosopher needs two forks (left + right) to eat
+
+Philosophers alternate between:
+
+Thinking 
+Eating 
+
+*problem:
+If all philosophers pick up one fork at the same time, then:
+
+Everyone is holding one fork
+No one can get the second fork
+Deadlock occurs
+
+*Deadlock happens if:
+
+All philosophers pick left fork first
+All wait for right fork
+No one releases → system stuck
+
+*Solutions to Avoid Deadlock
+1. Resource Ordering
+Pick forks in a fixed order (e.g., lower-numbered first)
+2. Limit Philosophers
+Allow at most N−1 philosophers to sit at table
+3. Asymmetric Solution
+Odd philosophers pick left first
+Even philosophers pick right first
+-----------
+
+DEADLOCK detection
+1.resource allocation graph
+2.wait for graph
+
+-----------
+A multi-core processor has multiple physical CPU cores inside one chip.
+Each core can execute tasks independently and in parallel.
+
+
+Multi-threading means a single process is divided into multiple threads.
+Threads share the same memory but execute independently
